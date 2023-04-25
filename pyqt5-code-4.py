@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
     # Генеруємо відповідь та показувати її в label
     def answer_chatgpt(self):
         # Генерація відповідь від ChatGPT
-        openai.api_key = "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"  # Замініть YOUR_API_KEY_HERE на свій API ключ
+        openai.api_key = "Введи сюди свій api_key"  # Замініть YOUR_API_KEY_HERE на свій API ключ
         response = openai.Completion.create(
             engine="text-davinci-003",  # Виберіть бажаний "engine" (davinci-codex, codex-babbage-001, ... )
             prompt=self.question.text(),
