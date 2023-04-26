@@ -86,6 +86,7 @@ class MainWindow(QMainWindow):
         self.question = QLineEdit(self)  # Створення текстового поля
         self.question.resize(400, 30)  # Зміна розміру
         self.question.move(10, 10)  # Зміна розташування
+        self.question.returnPressed.connect(self.answer_chatgpt)
 
         # Створюємо і налаштовуємо кнопку
         self.go = QPushButton("GO", self)  # Створення кнопки
