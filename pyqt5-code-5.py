@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+from typing import Callable, Dict
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QLabel, QLineEdit
@@ -35,9 +36,47 @@ def init_key():
         sys.exit("\nProvide API Key")
 
 
+class GPT:
+    def __init__(self) -> None:
+        self._history = []
+        self._config = {
+            "model": "gpt-3.5-turbo",
+            "stream": True,
+            "temperature": 0.7,
+            "presence_penalty": 0,
+            "frequency_penalty": 0,
+        }
+
+    def _update_history(self, **kwargs):
+        self._history.append(kwargs)
+
+    def ask(self, question: str, update_label_callback: Callable):
+        self._update_history(role="user", content=question)
+        try:
+            resp = openai.ChatCompletion.create(messages=self._history, **self._config)
+        # TODO: handle openai.error's: Timeout, APIError, APIConnectionError etc.
+        except Exception as e:
+            update_label_callback(repr(e))
+        else:
+            resp_content = ""
+            delta_list = list()
+            for chunk in resp:
+                if (
+                    not isinstance(chunk, Dict)
+                    or not (choices := chunk.get("choices"))
+                    or not len(choices)
+                ):
+                    continue
+                delta_list.append(choices.pop().get("delta", ""))
+                resp_content = "".join([m.get("content", "") for m in delta_list])
+                update_label_callback(resp_content)
+            self._update_history(role="assistant", content=resp_content)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.gpt = GPT()
 
         # Налаштовуємо заголовок і розмір вікна програми
         self.setWindowTitle("PyQt5 + ChatGPT")
@@ -63,20 +102,18 @@ class MainWindow(QMainWindow):
         )  # Вирівнюємо текст по верхньому лівому краю
         self.answer.setWordWrap(True)  # Додаємо авто перенесення рядків
 
+    def update_label(self, msg=""):
+        self.answer.setText(msg)
+        QtWidgets.QApplication.processEvents()
+
     # Генеруємо відповідь та показувати її в label
     def answer_chatgpt(self):
-        # Генерація відповідь від ChatGPT
-        response = openai.Completion.create(
-            engine="text-davinci-003",  # Виберіть бажаний "engine" (davinci-codex, codex-babbage-001, ... )
-            prompt=self.question.text(),
-            max_tokens=1024,
-            temperature=0.7,
-            n=1,
-            format="text",
-        )
-        self.answer.setText(
-            response.choices[0].text[2:]
-        )  # Змінюємо текст мітки на відповідь від ChatGPT
+        question = self.question.text()
+        if not len(question):
+            return
+        self.question.setText("")
+        self.update_label()
+        self.gpt.ask(question, self.update_label)
 
 
 # Запускаємо вікно програми
