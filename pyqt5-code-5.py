@@ -67,9 +67,11 @@ class GPT:
                     or not len(choices)
                 ):
                     continue
-                delta_list.append(choices.pop().get("delta", ""))
-                resp_content = "".join([m.get("content", "") for m in delta_list])
-                update_label_callback(resp_content)
+
+                if delta := choices.pop().get("delta"):
+                    delta_list.append(delta)
+                    resp_content = "".join([m.get("content", "") for m in delta_list])
+                    update_label_callback(resp_content)
             self._update_history(role="assistant", content=resp_content)
 
 
@@ -98,9 +100,7 @@ class MainWindow(QMainWindow):
         self.answer = QLabel(self)  # Створення текстової мітки
         self.answer.resize(480, 340)  # Зміна розміру
         self.answer.move(10, 50)  # Зміна розташування
-        self.answer.setAlignment(
-            QtCore.Qt.AlignTop
-        )  # Вирівнюємо текст по верхньому лівому краю
+        self.answer.setAlignment(QtCore.Qt.AlignTop)  # Вирівнюємо текст по верхньому лівому краю
         self.answer.setWordWrap(True)  # Додаємо авто перенесення рядків
 
     def update_label(self, msg=""):
