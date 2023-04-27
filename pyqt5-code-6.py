@@ -57,13 +57,13 @@ class GPT:
     def _update_history(self, **kwargs):
         self._history.append(kwargs)
 
-    def ask(self, question: str, update_label_callback: Callable):
+    def ask(self, question: str, update_callback: Callable):
         self._update_history(role="user", content=question)
         try:
             resp = openai.ChatCompletion.create(messages=self._history, **self._config)
         # TODO: handle openai.error's: Timeout, APIError, APIConnectionError etc.
         except Exception as e:
-            update_label_callback(repr(e))
+            update_callback(repr(e))
         else:
             resp_content = ""
             delta_list = list()
@@ -78,7 +78,7 @@ class GPT:
                 if delta := choices.pop().get("delta"):
                     delta_list.append(delta)
                     resp_content = "".join([m.get("content", "") for m in delta_list])
-                    update_label_callback(resp_content)
+                    update_callback(resp_content)
             self._update_history(role="assistant", content=resp_content)
 
 
@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
 
         # Створюємо і налаштовуємо текстове поле
         self.question = QLineEdit(self)  # Створення текстового поля
-        self.question.returnPressed.connect(self.answer_chatgpt)
+        self.question.returnPressed.connect(self.ask_chatgpt)
         main_layout.addWidget(self.question)
 
         self.central_widget.setLayout(main_layout)
@@ -118,7 +118,7 @@ class MainWindow(QMainWindow):
         self.user_format = "<p><span style='color:#f00;font-weight:700;'>User</span>: %s</p>"
 
     # Генеруємо відповідь та показувати її в label
-    def answer_chatgpt(self):
+    def ask_chatgpt(self):
         question = self.question.text()
         if not len(question):
             return
