@@ -122,11 +122,14 @@ class MainWindow(QMainWindow):
         question = self.question.text()
         if not len(question):
             return
+        self.question.setDisabled(True)
         self.chat_text += self.user_format % question
         self.rerender_chat
         self.question.setText("")
         self.gpt.ask(question, lambda t: self.update_answer(t))
         self.chat_text = self.chat_text.replace(self.separator, "")
+        self.question.setDisabled(False)
+        self.question.setFocus()
 
     def update_answer(self, text: str):
         history, *_ = self.chat_text.split(self.separator)
